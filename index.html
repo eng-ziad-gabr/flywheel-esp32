@@ -1,0 +1,79 @@
+<!DOCTYPE html><html><head>
+<meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Flywheel</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d14;color:#ccc;font-family:monospace;display:flex;flex-direction:column;align-items:center;padding:24px;min-height:100vh}
+h1{color:#00d4ff;letter-spacing:5px;font-size:1.3rem;margin-bottom:4px;margin-top:8px}
+.sub{color:#333;font-size:.7rem;letter-spacing:3px;margin-bottom:28px}
+svg{margin-bottom:18px}
+#wheel{transform-origin:100px 100px;animation:spin 2s linear infinite paused;transition:animation-duration .4s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pwr{width:78px;height:78px;border-radius:50%;border:2.5px solid #ff3355;background:transparent;color:#ff3355;font-size:2rem;cursor:pointer;display:block;margin:0 auto 26px;transition:all .35s;outline:none}
+.pwr.on{background:#ff335522;box-shadow:0 0 20px #ff335566;color:#ff6688;border-color:#ff6688}
+.card{width:100%;max-width:330px;background:#0f0f1a;border:1px solid #1c1c2e;border-radius:14px;padding:18px;margin-bottom:14px}
+.lbl{font-size:.65rem;color:#3a3a5c;letter-spacing:2px;margin-bottom:14px}
+input[type=range]{width:100%;height:4px;accent-color:#00d4ff;cursor:pointer}
+.row{display:flex;justify-content:space-between;margin-top:7px;font-size:.6rem;color:#2a2a3c}
+.dbtn{width:100%;padding:13px;border:1px solid #00d4ff33;background:#00d4ff08;color:#00d4ff;font-family:monospace;font-size:.95rem;border-radius:9px;cursor:pointer;letter-spacing:2px;outline:none}
+.dbtn.rev{color:#ff9944;border-color:#ff994433}
+.st{display:flex;gap:8px}
+.si{flex:1;text-align:center}
+.sv{font-size:1.05rem;color:#00d4ff;font-weight:bold}
+.sl{font-size:.6rem;color:#2a2a3c;letter-spacing:1px;margin-top:3px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1a1a2a;margin-right:5px;transition:all .3s}
+.dot.on{background:#00ff88;box-shadow:0 0 8px #00ff88}
+</style></head><body>
+<h1>&#9881; FLYWHEEL</h1>
+<p class=sub>CONTROL PANEL</p>
+<svg width=200 height=200 viewBox="0 0 200 200">
+<circle cx=100 cy=100 r=94 fill=none stroke=#00d4ff0a stroke-width=18/>
+<g id=wheel>
+<circle cx=100 cy=100 r=88 fill=none stroke=#00d4ff1a stroke-width=14 stroke-dasharray="46 46"/>
+<line x1=100 y1=12 x2=100 y2=188 stroke=#00d4ff30 stroke-width=1.5/>
+<line x1=12 y1=100 x2=188 y2=100 stroke=#00d4ff30 stroke-width=1.5/>
+<line x1=27 y1=27 x2=173 y2=173 stroke=#00d4ff1a stroke-width=1/>
+<line x1=173 y1=27 x2=27 y2=173 stroke=#00d4ff1a stroke-width=1/>
+</g>
+<circle cx=100 cy=100 r=28 fill=#0d0d14 stroke=#00d4ff44 stroke-width=1.5/>
+<text id=spd x=100 y=105 text-anchor=middle fill=#00d4ff font-family=monospace font-size=15 font-weight=bold>0</text>
+</svg>
+<button class=pwr id=pb onclick=togglePower()>&#9211;</button>
+<div class=card>
+<div class=lbl>&#9658; SPEED</div>
+<input type=range min=0 max=255 value=150 id=sl oninput=onSpd(this.value) onchange=sendSpd(this.value)>
+<div class=row><span>STOP</span><span>SLOW&larr;&rarr;FAST</span><span>MAX</span></div>
+</div>
+<div class=card>
+<div class=lbl>&#9658; DIRECTION</div>
+<button class=dbtn id=db onclick=toggleDir()>&#9654; FORWARD</button>
+</div>
+<div class=card>
+<div class=lbl>&#9658; STATUS</div>
+<div class=st>
+<div class=si><div class=sv><span class=dot id=dot></span><span id=stxt>OFF</span></div><div class=sl>MOTOR</div></div>
+<div class=si><div class=sv id=dv>FWD</div><div class=sl>DIR</div></div>
+<div class=si><div class=sv id=pv>150</div><div class=sl>PWM</div></div>
+</div></div>
+<script>
+let isOn=false,isFwd=true,spd=150;
+const wh=document.getElementById('wheel');
+function onSpd(v){spd=+v;document.getElementById('spd').textContent=v;document.getElementById('pv').textContent=v;upd();}
+function upd(){
+ if(!isOn||spd===0){wh.style.animationPlayState='paused';return;}
+ wh.style.animationPlayState='running';
+ wh.style.animationDuration=(0.5+((255-spd)/255)*7.5).toFixed(2)+'s';
+ wh.style.animationDirection=isFwd?'normal':'reverse';}
+function togglePower(){
+ fetch('/power',{method:'POST'}).then(r=>r.text()).then(s=>{
+  isOn=s==='1';
+  document.getElementById('pb').classList.toggle('on',isOn);
+  document.getElementById('dot').classList.toggle('on',isOn);
+  document.getElementById('stxt').textContent=isOn?'ON':'OFF';upd();});}
+function sendSpd(v){fetch('/speed?v='+v,{method:'POST'});}
+function toggleDir(){
+ fetch('/direction',{method:'POST'}).then(r=>r.text()).then(d=>{
+  isFwd=d==='1';
+  document.getElementById('db').textContent=isFwd?'\u25b6 FORWARD':'\u25c4 REVERSE';
+  document.getElementById('db').classList.toggle('rev',!isFwd);
+  document.getElementById('dv').textContent=isFwd?'FWD':'REV';upd();});}
+</script></body></html>
